@@ -17,9 +17,10 @@ class DealsService(object):
                 'google_maps_api_key')).json()
 
     def getRouteFromGoogleApi(self, currentAddress, deals):
-        # todo construct actual URL
-        url = "https://maps.googleapis.com/maps/api/directions/json?origin=Raekoja%20plats%2C2%2CTartu&destination=Raekoja%20plats%2C2%2CTartu&waypoints=optimize%3Atrue%7CTuru%202%2C%2051013%20Tartu%2C%20Estonia%2C&api_key=" + self.config.get(
-            'google_maps_api_key')
+        url = "https://maps.googleapis.com/maps/api/directions/json?origin=" + currentAddress + "&destination=" + currentAddress + "&waypoints=optimize%3Atrue"
+        for deal in deals:
+            url = url + "|" + deal["address"]
+        url = url + "&api_key=" + self.config.get(            'google_maps_api_key')
         response = None
         if (url in self.cache.keys()):
             response = self.cache[url]
