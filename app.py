@@ -46,6 +46,7 @@ def routes():
     ids = request.get_json()
     deals = getPipeDriveDeals()
     dealsSelected = list(filter(lambda x: x["id"] in ids, deals))
+    # todo build matrxi
     return jsonify(dealsSelected)
 
 
