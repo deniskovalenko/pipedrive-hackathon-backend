@@ -20,6 +20,15 @@ def deals():
     return jsonify(deals)
 
 
+def getDurationFromRoutes(routeInfo):
+    duration = 0
+    if routeInfo["status"] == "OK":
+        legs = routeInfo["routes"][0]["legs"]
+        for leg in legs:
+            duration = duration + leg["duration"]["value"]
+    return duration
+
+
 @app.route('/deals/route', methods=['POST'])
 def routes():
     addressWithDealIDs = request.get_json()
@@ -29,6 +38,7 @@ def routes():
     deals = deals_service.getPipeDriveDeals()
     dealsSelected = list(filter(lambda x: x["id"] in ids, deals))
     routeInfo = deals_service.getRouteFromGoogleApi(currentAddress, dealsSelected)
+    routeInfo["totalDurationInSeconds"] = getDurationFromRoutes(routeInfo)
     return jsonify(routeInfo)
 
 if __name__ == '__main__':
