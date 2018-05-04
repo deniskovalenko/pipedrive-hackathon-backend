@@ -7,8 +7,23 @@ import requests
 app = Flask(__name__)
 CORS(app)
 
+#in memoru non-thread-safe cache for routes and pipedrive deals
+cache = {}
+
 def getCoordinates(address):
     return requests.get("https://maps.googleapis.com/maps/api/geocode/json?address=" + address + "&key=" + app.config.get('google_maps_api_key')).json()
+
+def getRouteFromGoogleApi(currentAddress, deals):
+    #todo construct actual URL
+    url = "https://maps.googleapis.com/maps/api/directions/json?origin=Raekoja%20plats%2C2%2CTartu&destination=Raekoja%20plats%2C2%2CTartu&waypoints=optimize%3Atrue%7CTuru%202%2C%2051013%20Tartu%2C%20Estonia%2C&api_key=" + app.config.get('google_maps_api_key')
+    response = None
+    if (url in cache.keys()) :
+        response = cache[url]
+        print("returning route from cache")
+    else:
+        response = requests.get(url)
+        cache[url] = response
+    return response.json()
 
 def dealToMyObject(deal):
   address = deal["cb2d2fbdecb036750c820899ffe8f7c63861c777_formatted_address"]
@@ -29,11 +44,17 @@ def preprocessDeals(deals):
    return list(map(lambda deal : dealToMyObject(deal), deals))
 
 def getPipeDriveDeals():
-    url = "https://" + app.config.get('company_domain') + ".pipedrive.com/v1/deals?api_token=" + app.config.get('api_token')
-    result = requests.get(url)
-    dealsList = result.json()["data"]
-    clearedDealsList = preprocessDeals(dealsList)
-    #todo sort by value*probability
+    clearedDealsList = None
+    if "pipedriveDeals" in cache.keys():
+        clearedDealsList = cache["pipedriveDeals"]
+    else:
+        url = "https://" + app.config.get('company_domain') + ".pipedrive.com/v1/deals?api_token=" + app.config.get(
+            'api_token')
+        result = requests.get(url)
+        dealsList = result.json()["data"]
+        clearedDealsList = preprocessDeals(dealsList)
+        # todo sort by value*probability
+        cache["pipedriveDeals"] = clearedDealsList
     return clearedDealsList
 
 @app.route('/')
@@ -44,11 +65,6 @@ def build_path():
 def deals():
     deals = getPipeDriveDeals()
     return jsonify(deals)
-
-
-def getRouteFromGoogleApi(currentAddress, deals):
-    response = requests.get("https://maps.googleapis.com/maps/api/directions/json?origin=Raekoja%20plats%2C2%2CTartu&destination=Raekoja%20plats%2C2%2CTartu&waypoints=optimize%3Atrue%7CTuru%202%2C%2051013%20Tartu%2C%20Estonia%2C&api_key=" + app.config.get('google_maps_api_key'))
-    return response.json()
 
 
 @app.route('/deals/route', methods=['POST'])
