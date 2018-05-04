@@ -1,15 +1,22 @@
 from flask import Flask
+from flask import request
+from flask import jsonify
 import sys
 import requests
-from flask import jsonify
 app = Flask(__name__)
 
+def getCoordinates(address):
+    return requests.get("https://maps.googleapis.com/maps/api/geocode/json?address=" + address + "&key=" + app.config.get('google_maps_api_key')).json()
+
 def dealToMyObject(deal):
+  address = deal["cb2d2fbdecb036750c820899ffe8f7c63861c777_formatted_address"]
+  coordinates = getCoordinates(address)
   dealDict = {"name" : deal["title"],
+              "coordinates" : {"lat" : 59, "lon" : 23},
               "value" : deal["value"],
               "id" : deal["id"],
               "probability": deal["probability"],
-               "address" : deal["cb2d2fbdecb036750c820899ffe8f7c63861c777_formatted_address"]}
+               "address" : address}
   return dealDict
 
 def preprocessDeals(deals):
@@ -31,7 +38,16 @@ def deals():
     deals = getPipeDriveDeals()
     return jsonify(deals)
 
+@app.route('/deals/route', methods=['POST'])
+def routes():
+    ids = request.get_json()
+    deals = getPipeDriveDeals()
+    dealsSelected = list(filter(lambda x: x["id"] in ids, deals))
+    return jsonify(dealsSelected)
+
+
 if __name__ == '__main__':
     app.config['company_domain'] = sys.argv[1]
     app.config['api_token'] = sys.argv[2]
+    app.config['google_maps_api_key'] = sys.argv[3]
     app.run()
