@@ -10,9 +10,12 @@ def getCoordinates(address):
 
 def dealToMyObject(deal):
   address = deal["cb2d2fbdecb036750c820899ffe8f7c63861c777_formatted_address"]
-  coordinates = getCoordinates(address)
+  coordinates = {'lat' : 59, 'lng' : 32}
+  if (address!= None):
+      coordinates = getCoordinates(address)["results"][0]["geometry"]["location"]
+
   dealDict = {"name" : deal["title"],
-              "coordinates" : {"lat" : 59, "lon" : 23},
+              "coordinates" : coordinates,
               "value" : deal["value"],
               "id" : deal["id"],
               "probability": deal["probability"],
