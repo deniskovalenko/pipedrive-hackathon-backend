@@ -20,7 +20,7 @@ class DealsService(object):
         url = "https://maps.googleapis.com/maps/api/directions/json?origin=" + currentAddress + "&destination=" + currentAddress + "&waypoints=optimize%3Atrue"
         for deal in deals:
             url = url + "|" + deal["address"]
-        url = url + "&api_key=" + self.config.get(            'google_maps_api_key')
+        url = url + "&api_key=" + self.config.get('google_maps_api_key')
         response = None
         if (url in self.cache.keys()):
             response = self.cache[url]
