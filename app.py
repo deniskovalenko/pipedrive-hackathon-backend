@@ -54,4 +54,4 @@ if __name__ == '__main__':
     app.config['company_domain'] = sys.argv[1]
     app.config['api_token'] = sys.argv[2]
     app.config['google_maps_api_key'] = sys.argv[3]
-    app.run()
+    app.run(host='0.0.0.0',port='8080')
