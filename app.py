@@ -12,7 +12,8 @@ def getCoordinates(address):
 
 def dealToMyObject(deal):
   address = deal["cb2d2fbdecb036750c820899ffe8f7c63861c777_formatted_address"]
-  coordinates = {'lat' : 59, 'lng' : 32}
+  #in case we have deal without address just show something near Tartu
+  coordinates = {'lat' : 58.39, 'lng' : 26.74}
   if (address!= None):
       coordinates = getCoordinates(address)["results"][0]["geometry"]["location"]
 
@@ -32,25 +33,34 @@ def getPipeDriveDeals():
     result = requests.get(url)
     dealsList = result.json()["data"]
     clearedDealsList = preprocessDeals(dealsList)
+    #todo sort by value*probability
     return clearedDealsList
 
 @app.route('/')
 def build_path():
-    return "Hello, Salesman helper. To get to more useful page please use \n GET /deals \n or \n POST /deals/route [1,3,6,9] (supply array of deals' IDs in array"
+    return "Hello, Salesman helper. To get to more useful page please use \n GET /deals \n or \n POST /deals/route {currentAddress : 'Turu 2, Tartu, Estonia', idsForDeals : [1,3,6,9]} (supply array of deals' IDs in array and curreny address"
 
 @app.route('/deals')
 def deals():
     deals = getPipeDriveDeals()
     return jsonify(deals)
 
+
+def getRouteFromGoogleApi(currentAddress, deals):
+    response = requests.get("https://maps.googleapis.com/maps/api/directions/json?origin=Raekoja%20plats%2C2%2CTartu&destination=Raekoja%20plats%2C2%2CTartu&waypoints=optimize%3Atrue%7CTuru%202%2C%2051013%20Tartu%2C%20Estonia%2C&api_key=" + app.config.get('google_maps_api_key'))
+    return response.json()
+
+
 @app.route('/deals/route', methods=['POST'])
 def routes():
-    ids = request.get_json()
+    addressWithDealIDs = request.get_json()
+    currentAddress = addressWithDealIDs["currentAddress"]
+    ids = addressWithDealIDs["idsForDeals"]
+    # todo don't query again, store it as "global state"
     deals = getPipeDriveDeals()
     dealsSelected = list(filter(lambda x: x["id"] in ids, deals))
-    # todo build matrxi
-    return jsonify(dealsSelected)
-
+    routeInfo = getRouteFromGoogleApi(currentAddress, dealsSelected)
+    return jsonify(routeInfo)
 
 if __name__ == '__main__':
     app.config['company_domain'] = sys.argv[1]
